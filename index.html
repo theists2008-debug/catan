@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catan – Browser Edition</title>
+
+<style>
+body {
+    margin: 0;
+    background: #2c3e50;
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    color: #222;
+}
+
+#sidebar {
+    width: 300px;
+    background: #ecf0f1;
+    padding: 15px;
+    box-shadow: 3px 0 10px rgba(0,0,0,.4);
+    display: flex;
+    flex-direction: column;
+}
+
+#board {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(5, 120px);
+    gap: 6px;
+    padding: 15px;
+    justify-content: center;
+    align-content: center;
+}
+
+.tile {
+    height: 110px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #000;
+}
+
+.wood { background:#27ae60; }
+.brick { background:#e67e22; }
+.wool { background:#2ecc71; }
+.grain { background:#f1c40f; }
+.ore { background:#95a5a6; }
+.desert { background:#edcfb0; }
+
+.player {
+    border: 2px solid #ccc;
+    padding: 6px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+}
+
+.active {
+    border-color: red;
+    background: #fff;
+}
+
+button {
+    padding: 10px;
+    margin-top: 6px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    background: #34495e;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover { background:#456789 }
+
+#log {
+    background: black;
+    color: #00ff00;
+    font-family: monospace;
+    height: 130px;
+    overflow-y: auto;
+    margin-top: 8px;
+    padding: 6px;
+    border-radius: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="sidebar">
+    <h2>Catan</h2>
+
+    <div id="players"></div>
+
+    <div style="font-size:26px;text-align:center" id="dice">🎲 🎲</div>
+
+    <button onclick="rollDice()">Kast terninger</button>
+    <button onclick="buildSettlement()">Byg bosættelse</button>
+    <button onclick="endTurn()">Afslut tur</button>
+
+    <div id="log"></div>
+</div>
+
+<div id="board"></div>
+
+<script>
+const resources = ["wood","brick","wool","grain","ore"];
+const players = [
+    {name:"Spiller 1", res:{wood:0,brick:0,wool:0,grain:0,ore:0}, points:0},
+    {name:"Spiller 2", res:{wood:0,brick:0,wool:0,grain:0,ore:0}, points:0}
+];
+
+let current = 0;
+
+const board = [];
+const boardDiv = document.getElementById("board");
+const logDiv = document.getElementById("log");
+
+function log(txt){
+    logDiv.innerHTML += txt+"<br>";
+    logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+function createBoard(){
+    const tiles = 19;
+    for(let i=0;i<tiles;i++){
+        let type = i==0 ? "desert" : resources[Math.floor(Math.random()*resources.length)];
+        board.push(type);
+        let div = document.createElement("div");
+        div.className = "tile "+type;
+        div.innerHTML = type.toUpperCase();
+        boardDiv.appendChild(div);
+    }
+}
+
+function updatePlayers(){
+    let html="";
+    players.forEach((p,i)=>{
+        html+=`<div class="player ${i==current?'active':''}">
+        <b>${p.name}</b><br>
+        🪵 ${p.res.wood} 🧱 ${p.res.brick} 🐑 ${p.res.wool} 🌾 ${p.res.grain} ⛏ ${p.res.ore}<br>
+        ⭐ ${p.points} point
+        </div>`;
+    });
+    document.getElementById("players").innerHTML=html;
+}
+
+function rollDice(){
+    let d1 = 1+Math.floor(Math.random()*6);
+    let d2 = 1+Math.floor(Math.random()*6);
+    document.getElementById("dice").innerHTML = `🎲 ${d1} + ${d2} = ${d1+d2}`;
+
+    if(d1+d2==7){
+        log("7 rullet – ingen ressourcer!");
+        return;
+    }
+
+    let res = resources[Math.floor(Math.random()*resources.length)];
+    players[current].res[res]++;
+    log(players[current].name+" fik 1 "+res);
+    updatePlayers();
+}
+
+function buildSettlement(){
+    let p = players[current];
+    if(p.res.wood>=1 && p.res.brick>=1 && p.res.wool>=1 && p.res.grain>=1){
+        p.res.wood--; p.res.brick--; p.res.wool--; p.res.grain--;
+        p.points++;
+        log(p.name+" byggede bosættelse (+1 point)");
+        if(p.points>=10){
+            alert(p.name+" vinder spillet!");
+            location.reload();
+        }
+    } else {
+        log("Ikke nok ressourcer");
+    }
+    updatePlayers();
+}
+
+function endTurn(){
+    current = (current+1)%players.length;
+    updatePlayers();
+    log("Tur skift");
+}
+
+createBoard();
+updatePlayers();
+log("Spil startet");
+</script>
+
+</body>
+</html>
